@@ -1,7 +1,36 @@
 cmake_minimum_required(VERSION 3.5.2)
 project(direct_visual_lidar_calibration)
 
-add_compile_options(-std=c++17)
+# rosrun direct_visual_lidar_calibration preprocess -v  --data_path /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_bag  --dst_path  /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_pre/  --image /hk_camera/image_color --points_topic /livox_pc2 --camera_info /hk_camera_info
+# rosbag record /camera_info /livox_pc2 /hk_camera/image_color
+# rosrun direct_visual_lidar_calibration initial_guess_manual  /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_pre/
+# rosrun direct_visual_lidar_calibration calibrate /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_pre/
+# rosrun direct_visual_lidar_calibration calibrate
+# rosrun direct_visual_lidar_calibration viewer /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_pre/
+
+# rosrun direct_visual_lidar_calibration calibrate /home/direct_l_v_calibrate_data_avia/cab_hall/dvl_pre/ --registration_type nid_nelder_mead   --nid_bins 32 --nelder_mead_init_step 0.0005 --nelder_mead_convergence_criteria 1e-9
+
+#  (default = nid_bfgs)	nid_bfgs or nid_nelder_mead
+# --nid_bins (default = 16)	Number of histogram bins for NID
+# --nelder_mead_init_step (default = 0.001)	Nelder-mead initial step size
+# --nelder_mead_convergence_criteria (default = 1e-8)	Nelder-mead convergence criteria
+
+# # 查看OPENGL的版本 增加环境变量
+# # MESA_GL_VERSION_OVERRIDE=6.3
+
+set(GTSAM_DIR "/home/liunao/calib/gtsam/build")
+set(OPENCV_DIR "/home/liunao/r3/opencv-4.5.3/build/")
+
+find_package(GTSAM)
+if(GTSAM_FOUND)  
+  message(STATUS "-------------------------Found GTSAM ${GTSAM_VERSION}")
+else()
+  message(STATUS "GTSAM Not Found")
+endif()
+
+# add_compile_options(-std=c++17)
+set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -75,6 +104,7 @@ target_link_libraries(direct_visual_lidar_calibration
   ${GTSAM_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Iridescence_LIBRARIES}
+  stdc++fs
 )
 
 
@@ -157,28 +187,28 @@ target_link_libraries(viewer
   direct_visual_lidar_calibration
 )
 
-install(
-  TARGETS
-  direct_visual_lidar_calibration
-)
+# install(
+#   TARGETS
+#   direct_visual_lidar_calibration
+# )
 
-install(
-  TARGETS
-  preprocess_map
-  initial_guess_manual
-  initial_guess_auto
-  calibrate
-  viewer
-  DESTINATION
-  lib/${PROJECT_NAME}
-)
+# install(
+#   TARGETS
+#   preprocess_map
+#   initial_guess_manual
+#   initial_guess_auto
+#   calibrate
+#   viewer
+#   DESTINATION
+#   lib/${PROJECT_NAME}
+# )
 
-if($ENV{ROS_VERSION} EQUAL 1)
-  # ROS1
-else()
-  # ROS2
-  ament_python_install_package(${PROJECT_NAME})
-  install(PROGRAMS scripts/find_matches_superglue.py DESTINATION lib/${PROJECT_NAME})
-  ament_export_libraries(direct_visual_lidar_calibration)
-  ament_auto_package()
-endif()
+# if($ENV{ROS_VERSION} EQUAL 1)
+#   # ROS1
+# else()
+#   # ROS2
+#   ament_python_install_package(${PROJECT_NAME})
+#   install(PROGRAMS scripts/find_matches_superglue.py DESTINATION lib/${PROJECT_NAME})
+#   ament_export_libraries(direct_visual_lidar_calibration)
+#   ament_auto_package()
+# endif()

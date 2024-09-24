@@ -16,6 +16,14 @@ generate_lidar_image(const camera::GenericCameraBase::ConstPtr& proj, const Eige
 
   for (int i = 0; i < points->size(); i++) {
     const auto& pt_lidar = points->points[i];
+  
+    // 机械雷达的点只保留前面和相机视野重叠的部分
+    double yaw = std::atan2( pt_lidar.y(), pt_lidar.x() );
+    if(  pt_lidar.x() < 6.0 || pt_lidar.x() > 150.0 ||  std::fabs(yaw)  > M_PI / 4.0 )
+    {
+      continue;
+    }
+
     const Eigen::Vector4d pt_camera = T_camera_lidar * pt_lidar;
 
     if (pt_camera.head<3>().normalized().z() < min_z) {

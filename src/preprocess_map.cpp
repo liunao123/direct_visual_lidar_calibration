@@ -64,6 +64,9 @@ public:
     const std::string image_path = vm["image_path"].as<std::string>();
     const std::string dst_path = vm["dst_path"].as<std::string>();
     boost::filesystem::create_directories(vm["dst_path"].as<std::string>());
+    std::cout << __LINE__ << " " << map_path << std::endl;
+    std::cout << __LINE__ << " " << image_path << std::endl;
+    std::cout << __LINE__ << " " << dst_path << std::endl;
 
     // Load image
     cv::Mat image = cv::imread(image_path, 0);
@@ -125,7 +128,7 @@ public:
   }
 
   vlcal::Frame::ConstPtr load_lidar_points(const std::string& path, double voxel_resolution, double min_distance) {
-    auto map_points = pcl::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    auto map_points = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     if (pcl::io::load(path, *map_points)) {
       std::cerr << "error: failed to load " << path << std::endl;
       return nullptr;
@@ -138,8 +141,8 @@ public:
 
     pcl::ApproximateVoxelGrid<pcl::PointXYZI> voxelgrid;
     voxelgrid.setLeafSize(voxel_resolution, voxel_resolution, voxel_resolution);
-    voxelgrid.setInputCloud(map_points);
-    auto filtered = pcl::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    voxelgrid.setInputCloud( (*map_points).makeShared() );
+    auto filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     voxelgrid.filter(*filtered);
 
     std::cout << "map_points=" << map_points->size() << " filtered=" << filtered->size() << std::endl;

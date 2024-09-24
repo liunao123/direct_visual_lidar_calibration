@@ -3,7 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_set>
-#include <filesystem>
+// #include <filesystem>
+#include<experimental/filesystem>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -79,10 +80,11 @@ bool Preprocess::run(int argc, char** argv) {
   const std::string dst_path = vm["dst_path"].as<std::string>();
   std::cout << "data_path: " << data_path << std::endl;
   std::cout << "dst_path : " << dst_path << std::endl;
-  std::filesystem::create_directories(dst_path);
+  std:: experimental::filesystem::create_directories(dst_path);
 
   std::vector<std::string> bag_filenames;
-  for (const auto& path : std::filesystem::directory_iterator(data_path)) {
+  for (const auto& path : std:: experimental::filesystem::directory_iterator(data_path)) {
+    std::cout << "- " << path.path().string() << std::endl;
     if (!valid_bag(path.path().string())) {
       continue;
     }
@@ -157,7 +159,7 @@ bool Preprocess::run(int argc, char** argv) {
 
     lidar_points[i] = points;
 
-    const std::string bag_name = std::filesystem::path(bag_filename).filename();
+    const std::string bag_name = std:: experimental::filesystem::path(bag_filename).filename();
     cv::imwrite(dst_path + "/" + bag_name + ".png", image);
 
     glk::PLYData ply;
@@ -175,14 +177,16 @@ bool Preprocess::run(int argc, char** argv) {
   std::cout << "lidar_points[0]:" << lidar_points.front()->size() << std::endl;
 
   // Generate LiDAR images
-  const double lidar_fov = vlcal::estimate_lidar_fov(lidar_points.front());
+  double lidar_fov = vlcal::estimate_lidar_fov(lidar_points.front());
   std::cout << "LiDAR FoV: " << lidar_fov * 180.0 / M_PI << "[deg]" << std::endl;
   Eigen::Vector2i lidar_image_size;
   std::string lidar_camera_model;
   std::vector<double> lidar_camera_intrinsics;
 
   Eigen::Isometry3d T_lidar_camera = Eigen::Isometry3d::Identity();
-
+  
+  // 根据雷达的视野范围选择生成的强度图像的大小
+  lidar_fov = M_PI / 2.0;
   if (lidar_fov < 150.0 * M_PI / 180.0) {
     lidar_image_size = {1024, 1024};
     T_lidar_camera.linear() = (Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitZ())).toRotationMatrix();
@@ -201,7 +205,7 @@ bool Preprocess::run(int argc, char** argv) {
   std::cout << "save LiDAR images" << std::endl;
 #pragma omp parallel for
   for (int i = 0; i < bag_filenames.size(); i++) {
-    const std::string bag_name = std::filesystem::path(bag_filenames[i]).filename();
+    const std::string bag_name = std:: experimental::filesystem::path(bag_filenames[i]).filename();
     auto [intensities, indices] = vlcal::generate_lidar_image(lidar_proj, lidar_image_size, T_lidar_camera.inverse(), lidar_points[i]);
 
     cv::Mat indices_8uc4(indices.rows, indices.cols, CV_8UC4, reinterpret_cast<cv::Vec4b*>(indices.data));
@@ -213,7 +217,7 @@ bool Preprocess::run(int argc, char** argv) {
 
   //
   std::vector<std::string> bag_names(bag_filenames);
-  std::transform(bag_filenames.begin(), bag_filenames.end(), bag_names.begin(), [](const auto& path) { return std::filesystem::path(path).filename(); });
+  std::transform(bag_filenames.begin(), bag_filenames.end(), bag_names.begin(), [](const auto& path) { return std:: experimental::filesystem::path(path).filename(); });
 
   std::cout << "save meta data" << std::endl;
 
@@ -246,7 +250,7 @@ bool Preprocess::run(int argc, char** argv) {
     });
 
     for (const auto& bag_filename : bag_filenames) {
-      const std::string bag_name = std::filesystem::path(bag_filename).filename();
+      const std::string bag_name = std:: experimental::filesystem::path(bag_filename).filename();
       const cv::Mat image = cv::imread(dst_path + "/" + bag_name + ".png");
       const auto points = glk::load_ply(dst_path + "/" + bag_name + ".ply");
 

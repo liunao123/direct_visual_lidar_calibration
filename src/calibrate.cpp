@@ -138,11 +138,43 @@ public:
                 << "for writing" << vlcal::console::reset << std::endl;
     }
     ofs << config.dump(2) << std::endl;
+    ofs << std::endl;
+    ofs << std::endl;
 
     std::stringstream sst;
-    sst << "--- T_lidar_camera ---" << std::endl;
+    sst << "T_lidar_camera(T_lc for r3live):" << std::endl;
     sst << T_lidar_camera.matrix() << std::endl;
     sst << "saved to " << data_path + "/calib.json";
+
+    ofs << "T_lidar_camera(T_lc for r3live):" << std::endl;
+    ofs << T_lidar_camera.matrix() << std::endl;
+    ofs << "saved to " << data_path + "/calib.json";
+
+    ofs << std::endl;
+    ofs << std::endl;
+    ofs << std::endl;
+
+    ofs << "T_camera_lidar(T_cl for fast_livo):" << std::endl;
+    ofs << T_lidar_camera.inverse().matrix() << std::endl;
+    ofs << "saved to " << data_path + "/calib.json";
+
+    Eigen::Vector3d adjust_euler = ( init_T_camera_lidar.rotation().inverse() * T_lidar_camera.inverse().rotation() ) .eulerAngles(2, 1, 0);
+
+    // Eigen::Vector3d adjust_euler = T_lidar_camera.inverse().rotation().eulerAngles(2, 1, 0);
+
+    adjust_euler = adjust_euler * 180.0 / 3.1415926 ;
+    ofs <<  std::endl << "R_cl < directly use in fast_livo > :<ZYX> " << std::endl;
+    // float Roll = adjust_euler(2);   
+    // float Pitch = adjust_euler(1); 
+    // float Yaw = adjust_euler(0);
+    ofs  << "Roll : " << adjust_euler(2) << " , Pitch : " << adjust_euler(1) <<  " , Yaw : " << adjust_euler(0) << std::endl << std::endl;
+
+    adjust_euler = T_lidar_camera.inverse().rotation().eulerAngles(2, 1, 0);
+    adjust_euler = adjust_euler * 180.0 / 3.1415926 ;
+
+    ofs  << "T_lidar_camera: Roll : " << adjust_euler(2) << " , Pitch : " << adjust_euler(1) <<  " , Yaw : " << adjust_euler(0) << std::endl << std::endl;
+
+    std::cout << "DONE result saved to " << data_path + "/calib.json" << std::endl ;
 
     viewer->append_text(sst.str());
     viewer->spin_once();
